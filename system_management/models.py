@@ -5,7 +5,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
-from . import constants
+
+from system_management import constants
+
 
 
 class UserType(models.Model):
