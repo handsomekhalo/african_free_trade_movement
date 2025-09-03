@@ -235,3 +235,40 @@ def login(request):
             'message': 'Invalid JSON data'
         }, status=400)
 
+
+@csrf_exempt
+def logout(request):
+    print('hit logout func')
+    if request.method != 'POST':
+        return JsonResponse({"status": "error", "message": "Use POST"}, status=405)
+
+    token = request.session.get("token")
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Token "):
+            token = auth_header.split("Token ")[-1]
+        elif auth_header.startswith("Bearer "):
+            token = auth_header.split("Bearer ")[-1]
+
+    if not token:
+        request.session.flush()
+        return redirect('login_view')
+
+    url = f"{host_url(request)}{reverse('logout_api')}"
+    headers = {
+        'Authorization': f'Token {token}',
+        'Content-Type': 'application/json'
+    }
+
+    print("Token being sent to logout_api:", token)
+
+    try:
+        api_response_data = api_connection(method="POST", url=url, headers=headers, data={})
+        if isinstance(api_response_data, dict) and api_response_data.get('status') == 'success':
+            request.session.flush()
+            return redirect('login_view')
+        else:
+            message = api_response_data.get('message', 'Logout failed.')
+            return JsonResponse({"status": "error", "message": message}, status=500)
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=503)
